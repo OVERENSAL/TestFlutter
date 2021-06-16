@@ -1,39 +1,53 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:test_app/viewmodels/viewmodel_test_structure_list.dart';
+import 'package:html_unescape/html_unescape.dart';
+import 'package:test_app/models/question.dart';
+import 'package:test_app/viewmodels/question_list_viewmodel.dart';
 
 class TestPage extends StatefulWidget {
-  final ViewModelTestStructureList vmTests;
-  TestPage({@required this.vmTests});
+  final QuestionListViewModel vmQuestionList;
+  final HtmlUnescape unescape = HtmlUnescape();
+
+  TestPage({@required this.vmQuestionList});
 
   @override
   _TestPageState createState() => _TestPageState();
 }
 
-class _TestPageState extends State<TestPage>{
+class _TestPageState extends State<TestPage> {
+  List<int> radioIndexes = Iterable<int>.generate(4).toList();
 
-  @override
-  void initState() {
-    super.initState();
+  Future<bool> _onWillPop() async {
+    if (widget.vmQuestionList.currentQuestionIndex > 0) {
+      setState(
+        () {
+          widget.vmQuestionList.previousQuestion();
+        },
+      );
+      return true;
+    }
+    Navigator.pop(context);
+    return false;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("TestApp")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Container(
-                  margin: EdgeInsets.only(top: 200),
-                ),
-                Flexible(
+    final questionModel = widget
+        .vmQuestionList.questions[widget.vmQuestionList.currentQuestionIndex];
+    return WillPopScope(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("TestApp"),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              FractionallySizedBox(
+                child: Container(
+                  margin: EdgeInsets.only(top: 30),
                   child: Text(
-                    widget.vmTests.getQuestion(),
+                    widget.unescape.convert(questionModel.question),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 30,
@@ -41,93 +55,63 @@ class _TestPageState extends State<TestPage>{
                     ),
                     textAlign: TextAlign.center,
                   ),
-                )
-              ],
-            ),
-            Row(children: [
-              widget.vmTests.visibility ? ButtonBar(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        Radio(
-                          value: 0,
-                          groupValue: widget.vmTests.selectedRadio,
-                          onChanged: (val) {
-                            setState(() {
-                              widget.vmTests.setSelectRadio(val);
-                            });
-                          },
-                        ),
-                        Text(widget.vmTests.tests[widget.vmTests.counter].answers[0])
-                      ]),
-                      Row(children: [
-                        Radio(
-                          value: 1,
-                          groupValue: widget.vmTests.selectedRadio,
-                          onChanged: (val) {
-                            setState(() {
-                              widget.vmTests.setSelectRadio(val);
-                            });
-                          },
-                        ),
-                        Text(widget.vmTests.tests[widget.vmTests.counter].answers[1]),
-                      ]),
-                      Row(children: [
-                        Radio(
-                          value: 2,
-                          groupValue: widget.vmTests.selectedRadio,
-                          onChanged: (val) {
-                            setState(() {
-                              widget.vmTests.setSelectRadio(val);
-                            });
-                          },
-                        ),
-                        Text(widget.vmTests.tests[widget.vmTests.counter].answers[2]),
-                      ]),
-                      Row(children: [
-                        Radio(
-                          value: 3,
-                          groupValue: widget.vmTests.selectedRadio,
-                          onChanged: (val) {
-                            setState(() {
-                              widget.vmTests.setSelectRadio(val);
-                            });
-                          },
-                        ),
-                        Text(widget.vmTests.tests[widget.vmTests.counter].answers[3]),
-                      ])
-                    ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: radioIndexes
+                    .map(
+                      (index) => Row(
+                        children: [
+                          Radio(
+                            value: index,
+                            groupValue:
+                                widget.vmQuestionList.getSelectedRadio(),
+                            onChanged: (val) {
+                              setState(
+                                () {
+                                  widget.vmQuestionList.saveAnswer(val);
+                                },
+                              );
+                            },
+                          ),
+                          Text(widget.unescape.convert(questionModel.answers[index])),
+                        ],
+                      ),
+                    )
+                    .toList(),
+              ),
+              Container(
+                margin: EdgeInsets.only(bottom: 40),
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(
+                      () {
+                        widget.vmQuestionList.runButtonEvents(context);
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.indigo,
+                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                    textStyle: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Roboto',
+                    ),
                   ),
-                ],
-              ) : Container(),
-            ]),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        widget.vmTests.nextTest(context);
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                        primary: Colors.indigo,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                        textStyle: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Roboto',
-                        )),
-                    child: Text(widget.vmTests.getButtonText())),
-                Padding(padding: EdgeInsets.only(bottom: 150)),
-              ],
-            ),
-          ],
+                  child: Text(
+                    widget.vmQuestionList.getButtonText(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+      onWillPop: () async {
+        _onWillPop();
+      },
     );
   }
 }

@@ -1,29 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:test_app/viewmodels/question_list_viewmodel.dart';
-import 'package:test_app/views/test_page.dart';
 import '../constants.dart';
 
-class MainPage extends StatefulWidget {
-  @override
-  _MainPageState createState() => _MainPageState();
-}
-
-class _MainPageState extends State<MainPage> {
-  QuestionListViewModel questionListViewModel = QuestionListViewModel();
-
-  void redirectToQuestions() async {
-    await questionListViewModel.startTest();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) {
-          return TestPage(vmQuestionList: questionListViewModel);
-        },
-      ),
-    );
-  }
-
+class ResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,7 +17,7 @@ class _MainPageState extends State<MainPage> {
               child: Container(
                 margin: EdgeInsets.only(top: 30),
                 child: Text(
-                  Constants.mainNote,
+                  ModalRoute.of(context).settings.arguments,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 40,
@@ -52,7 +31,8 @@ class _MainPageState extends State<MainPage> {
               margin: EdgeInsets.only(bottom: 40),
               child: ElevatedButton(
                 onPressed: () {
-                  redirectToQuestions();
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/', (route) => false);
                 },
                 style: ElevatedButton.styleFrom(
                   primary: Colors.indigo,
@@ -64,7 +44,7 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ),
                 child: Text(
-                  Constants.buttonText,
+                  Constants.ok,
                 ),
               ),
             ),
